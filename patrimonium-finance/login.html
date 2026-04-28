@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -168,19 +169,19 @@ input::placeholder{color:var(--text3);}
 
 <script>
 function googleLogin() {
-  // SSO Google será integrado via OAuth 2.0 na versão produção
   const toast = document.createElement('div');
   toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1b2740;color:#93c5fd;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid rgba(37,99,235,.3);z-index:999';
   toast.textContent='🔜 Login com Google disponível em breve';
   document.body.appendChild(toast);
   setTimeout(()=>toast.remove(), 2500);
 }
+
+function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('email').value.trim();
   const pass  = document.getElementById('pass').value;
   const btn   = document.getElementById('btn-login');
 
-  // Basic validation
   let valid = true;
   if (!email || !email.includes('@')) {
     document.getElementById('wrap-email').classList.add('err'); valid = false;
@@ -193,9 +194,7 @@ function googleLogin() {
   btn.textContent = 'Entrando...';
   btn.disabled = true;
 
-  // Simulate auth
   setTimeout(() => {
-    // Demo: any email/pass works
     window.location.href = 'finreport.html';
   }, 1200);
 }
