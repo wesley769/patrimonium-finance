@@ -295,33 +295,25 @@ tr:hover td{background:rgba(37,99,235,.02);}
 
 <div id="toast"></div>
 
+<script src="api.js"></script>
 <script>
-const EMPRESAS_RAW = JSON.parse(localStorage.getItem('pfinance_empresas')||'[]');
-const EMPRESAS = EMPRESAS_RAW.length ? EMPRESAS_RAW : [
-  {id:1,razao:'Group SMS Corporation LTDA',fantasia:'Group SMS',cnpj:'12.345.678/0001-99',cor:'#2563eb'},
-  {id:2,razao:'Acme Distribuição LTDA',fantasia:'Acme Dist.',cnpj:'98.765.432/0001-11',cor:'#059669'},
-  {id:3,razao:'Tech Solutions S/A',fantasia:'TechSol',cnpj:'11.222.333/0001-44',cor:'#7c3aed'},
-];
+requireAdmin();
+initSidebarUser();
 
-let users = JSON.parse(localStorage.getItem('pfinance_users')||'null') || [
-  {id:1,nome:'Wesley',sobrenome:'Silva',email:'w.silva@groupsms.com.br',cargo:'Gestor Financeiro',tel:'(31) 99999-0001',role:'Administrador',status:'Ativo',lastAccess:'Hoje, 14:32',since:'Jan 2026',cor:'#2563eb',empresas:[{id:1,role:'Administrador'},{id:2,role:'Administrador'}]},
-  {id:2,nome:'Carla',sobrenome:'Mendes',email:'c.mendes@groupsms.com.br',cargo:'Analista Financeiro',tel:'(31) 98888-1234',role:'Analista',status:'Ativo',lastAccess:'Ontem, 09:15',since:'Fev 2026',cor:'#059669',empresas:[{id:1,role:'Analista'}]},
-  {id:3,nome:'Rafael',sobrenome:'Torres',email:'r.torres@groupsms.com.br',cargo:'Contador',tel:'',role:'Visualizador',status:'Ativo',lastAccess:'3 dias atrás',since:'Mar 2026',cor:'#d97706',empresas:[{id:1,role:'Visualizador'},{id:3,role:'Analista'}]},
-  {id:4,nome:'Ana Beatriz',sobrenome:'Lima',email:'a.lima@techsol.com.br',cargo:'Sócio / Diretor',tel:'(41) 97777-5678',role:'Administrador',status:'Pendente',lastAccess:'Nunca',since:'Abr 2026',cor:'#7c3aed',empresas:[{id:3,role:'Administrador'}]},
-];
+let users = [], empresasList = [];
 let editingId = null, viewingId = null;
-function saveUsers(){localStorage.setItem('pfinance_users',JSON.stringify(users));}
+
 function getInitials(u){return(u.nome[0]+(u.sobrenome?.[0]||'')).toUpperCase();}
-function eNome(id){return EMPRESAS.find(e=>e.id==id)?.fantasia||EMPRESAS.find(e=>e.id==id)?.razao||'?';}
-function eCor(id){return EMPRESAS.find(e=>e.id==id)?.cor||'#666';}
-function roleBadge(r){return{Administrador:'badge-admin',Analista:'badge-analista',Visualizador:'badge-viewer'}[r]||'';}
+function eNome(id){return empresasList.find(e=>e.id==id)?.fantasia||empresasList.find(e=>e.id==id)?.razao||'?';}
+function eCor(id){return empresasList.find(e=>e.id==id)?.cor||'#666';}
+function roleBadge(r){return{Administrador:'badge-admin',Analista:'badge-analista',Visualizador:'badge-viewer',admin:'badge-admin',cliente:'badge-viewer'}[r]||'';}
 function statusBadge(s){return{Ativo:'badge-ativo',Inativo:'badge-inativo',Pendente:'badge-pendente'}[s]||'';}
 
 function updateStats(){
   document.getElementById('stat-total').textContent=users.length;
-  document.getElementById('stat-ativos').textContent=users.filter(u=>u.status==='Ativo').length;
+  document.getElementById('stat-ativos').textContent=users.filter(u=>u.ativo!==false&&u.status!=='Inativo').length;
   document.getElementById('stat-pendentes').textContent=users.filter(u=>u.status==='Pendente').length;
-  document.getElementById('stat-admins').textContent=users.filter(u=>u.role==='Administrador').length;
+  document.getElementById('stat-admins').textContent=users.filter(u=>u.role==='admin'||u.role==='Administrador').length;
 }
 
 function renderTable(){
@@ -330,32 +322,35 @@ function renderTable(){
   const sFilter=document.getElementById('f-status').value;
   const eFilter=document.getElementById('f-empresa').value;
   const list=users.filter(u=>{
-    if(q&&!(u.nome+' '+u.sobrenome+' '+u.email).toLowerCase().includes(q))return false;
+    if(q&&!(u.nome+' '+(u.sobrenome||'')+' '+u.email).toLowerCase().includes(q))return false;
     if(rFilter&&u.role!==rFilter)return false;
-    if(sFilter&&u.status!==sFilter)return false;
-    if(eFilter&&!u.empresas?.some(e=>String(e.id)===eFilter))return false;
+    if(sFilter){
+      const st=u.ativo===false?'Inativo':u.status||'Ativo';
+      if(st!==sFilter)return false;
+    }
+    if(eFilter&&!u.empresas?.some(e=>String(e.id)===eFilter||String(e.empresa_id)===eFilter))return false;
     return true;
   });
   document.getElementById('count-label').textContent=`${list.length} usuário(s)`;
   document.getElementById('pag-info').textContent=`Mostrando ${list.length} de ${users.length} usuários`;
+  const roleLabel = r => ({admin:'Administrador',cliente:'Cliente',Administrador:'Administrador',Analista:'Analista',Visualizador:'Visualizador'}[r]||r);
   document.getElementById('table-body').innerHTML=list.map(u=>`
-    <tr style="cursor:pointer" onclick="openDrawer(${u.id})">
-      <td><div class="user-cell"><div class="user-avatar" style="background:${u.cor}">${getInitials(u)}</div><div><div class="user-name">${u.nome} ${u.sobrenome||''}</div><div class="user-email">${u.email}</div></div></div></td>
-      <td><span class="badge ${roleBadge(u.role)}">${u.role}</span></td>
-      <td><div class="empresa-chips">${(u.empresas||[]).map(e=>`<div class="empresa-chip" style="background:${eCor(e.id)}" title="${eNome(e.id)} — ${e.role}"><span style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.6);flex-shrink:0"></span>${eNome(e.id)}</div>`).join('')}</div></td>
-      <td><span class="badge ${statusBadge(u.status)}">${u.status}</span></td>
-      <td style="color:var(--text2);font-size:13px">${u.lastAccess}</td>
-      <td style="color:var(--text2);font-size:13px">${u.since}</td>
+    <tr style="cursor:pointer" onclick="openDrawer('${u.id}')">
+      <td><div class="user-cell"><div class="user-avatar" style="background:${u.cor||'#2563eb'}">${getInitials(u)}</div><div><div class="user-name">${u.nome} ${u.sobrenome||''}</div><div class="user-email">${u.email}</div></div></div></td>
+      <td><span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span></td>
+      <td><div class="empresa-chips">${(u.empresas||[]).map(e=>{const eid=e.id||e.empresa_id;return`<div class="empresa-chip" style="background:${eCor(eid)}">${eNome(eid)}</div>`;}).join('')}</div></td>
+      <td><span class="badge ${u.ativo===false?'badge-inativo':'badge-ativo'}">${u.ativo===false?'Inativo':'Ativo'}</span></td>
+      <td style="color:var(--text2);font-size:13px">${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):u.since||'—'}</td>
+      <td style="color:var(--text2);font-size:13px">${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):u.since||'—'}</td>
       <td onclick="event.stopPropagation()">
         <div class="action-menu">
-          <button class="action-btn" onclick="toggleMenu(event,${u.id})">⋯</button>
+          <button class="action-btn" onclick="toggleMenu(event,'${u.id}')">⋯</button>
           <div class="dropdown" id="menu-${u.id}">
-            <div class="dropdown-item" onclick="openDrawer(${u.id})">👤 Ver perfil</div>
-            <div class="dropdown-item" onclick="openModal(${u.id})">✏️ Editar</div>
-            ${u.status==='Pendente'?`<div class="dropdown-item" onclick="resend(${u.id})">📧 Reenviar convite</div>`:''}
-            <div class="dropdown-item" onclick="toggleStatus(${u.id})">${u.status==='Ativo'?'🔒 Desativar':'✅ Ativar'}</div>
+            <div class="dropdown-item" onclick="openDrawer('${u.id}')">👤 Ver perfil</div>
+            <div class="dropdown-item" onclick="openModal('${u.id}')">✏️ Editar</div>
+            <div class="dropdown-item" onclick="toggleStatus('${u.id}')">${u.ativo===false?'✅ Ativar':'🔒 Desativar'}</div>
             <div class="dropdown-divider"></div>
-            <div class="dropdown-item danger" onclick="removeUser(${u.id})">🗑 Remover</div>
+            <div class="dropdown-item danger" onclick="removeUser('${u.id}')">🗑 Remover</div>
           </div>
         </div>
       </td>
@@ -366,25 +361,28 @@ function renderTable(){
 function toggleMenu(e,id){e.stopPropagation();document.querySelectorAll('.dropdown').forEach(d=>{if(d.id!=='menu-'+id)d.classList.remove('open');});document.getElementById('menu-'+id)?.classList.toggle('open');}
 document.addEventListener('click',()=>document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('open')));
 
+// ── DRAWER ──
 function openDrawer(id){
-  const u=users.find(x=>x.id===id);if(!u)return;viewingId=id;
+  const u=users.find(x=>x.id===id||x.id==id);if(!u)return;viewingId=id;
   document.getElementById('d-avatar').textContent=getInitials(u);
-  document.getElementById('d-avatar').style.background=u.cor;
+  document.getElementById('d-avatar').style.background=u.cor||'#2563eb';
   document.getElementById('d-name').textContent=u.nome+' '+(u.sobrenome||'');
   document.getElementById('d-email').textContent=u.email;
   document.getElementById('d-cargo').textContent=u.cargo||'—';
   document.getElementById('d-tel').textContent=u.tel||'—';
-  document.getElementById('d-role').innerHTML=`<span class="badge ${roleBadge(u.role)}">${u.role}</span>`;
-  document.getElementById('d-status').innerHTML=`<span class="badge ${statusBadge(u.status)}">${u.status}</span>`;
-  document.getElementById('d-last').textContent=u.lastAccess;
-  document.getElementById('d-since').textContent=u.since;
-  document.getElementById('d-toggle-btn').textContent=u.status==='Ativo'?'🔒 Desativar':'✅ Ativar';
-  document.getElementById('d-empresas').innerHTML=(u.empresas||[]).map(e=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r);border:1.5px solid var(--border)">
-      <div style="width:10px;height:10px;border-radius:50%;background:${eCor(e.id)};flex-shrink:0"></div>
-      <div style="flex:1;font-size:13px;font-weight:600">${eNome(e.id)}</div>
-      <span class="badge ${roleBadge(e.role)}">${e.role}</span>
-    </div>`).join('');
+  const roleLabel=r=>({admin:'Administrador',cliente:'Cliente',Administrador:'Administrador'}[r]||r);
+  document.getElementById('d-role').innerHTML=`<span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span>`;
+  document.getElementById('d-status').innerHTML=`<span class="badge ${u.ativo===false?'badge-inativo':'badge-ativo'}">${u.ativo===false?'Inativo':'Ativo'}</span>`;
+  document.getElementById('d-last').textContent='—';
+  document.getElementById('d-since').textContent=u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):'—';
+  document.getElementById('d-toggle-btn').textContent=u.ativo===false?'✅ Ativar':'🔒 Desativar';
+  document.getElementById('d-empresas').innerHTML=(u.empresas||[]).map(e=>{
+    const eid=e.id||e.empresa_id;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r);border:1.5px solid var(--border)">
+      <div style="width:10px;height:10px;border-radius:50%;background:${eCor(eid)};flex-shrink:0"></div>
+      <div style="flex:1;font-size:13px;font-weight:600">${eNome(eid)}</div>
+      <span class="badge ${roleBadge(e.role)}">${e.role||'Cliente'}</span>
+    </div>`;}).join('');
   document.getElementById('drawer').classList.add('open');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');viewingId=null;}
@@ -392,37 +390,64 @@ function editFromDrawer(){if(viewingId){closeDrawer();openModal(viewingId);}}
 function toggleFromDrawer(){if(viewingId){toggleStatus(viewingId);closeDrawer();}}
 function removeFromDrawer(){if(viewingId){removeUser(viewingId);closeDrawer();}}
 
-function toggleStatus(id){const u=users.find(x=>x.id===id);if(!u)return;u.status=u.status==='Ativo'?'Inativo':'Ativo';saveUsers();renderTable();showToast(`${u.nome} ${u.status==='Ativo'?'ativado':'desativado'}.`);}
-function removeUser(id){const u=users.find(x=>x.id===id);if(!confirm(`Remover "${u?.nome} ${u?.sobrenome||''}"?`))return;users=users.filter(x=>x.id!==id);saveUsers();renderTable();showToast('Usuário removido.');}
-function resend(id){const u=users.find(x=>x.id===id);showToast(`Convite reenviado para ${u?.email}.`);}
+// ── ACTIONS ──
+async function toggleStatus(id){
+  const u=users.find(x=>x.id===id||x.id==id);if(!u)return;
+  const ativo=u.ativo===false?true:false;
+  try{
+    await UsuariosAPI.update(id,{...u,ativo});
+    u.ativo=ativo;renderTable();showToast(`${u.nome} ${ativo?'ativado':'desativado'}.`);
+  }catch(err){showToast('Erro: '+err.message);}
+}
+async function removeUser(id){
+  const u=users.find(x=>x.id===id||x.id==id);
+  if(!confirm(`Remover "${u?.nome} ${u?.sobrenome||''}"?`))return;
+  try{
+    await UsuariosAPI.delete(id);
+    users=users.filter(x=>x.id!==id&&x.id!=id);
+    renderTable();showToast('Usuário removido.');
+  }catch(err){showToast('Erro: '+err.message);}
+}
 
-function selectRole(r){document.querySelectorAll('.role-opt').forEach(o=>{const v=o.querySelector('input').value;o.classList.toggle('selected',v===r);if(v===r)o.querySelector('input').checked=true;});}
+// ── MODAL ──
+function selectRole(r){
+  document.querySelectorAll('.role-opt').forEach(o=>{
+    const v=o.querySelector('input').value;
+    o.classList.toggle('selected',v===r);
+    if(v===r)o.querySelector('input').checked=true;
+  });
+}
 
 function openModal(editId=null){
-  editingId=editId;const u=editId?users.find(x=>x.id===editId):null;
+  editingId=editId;
+  const u=editId?users.find(x=>x.id===editId||x.id==editId):null;
   document.getElementById('modal-title').textContent=u?'Editar Usuário':'Convidar Usuário';
   document.getElementById('inv-nome').value=u?.nome||'';
   document.getElementById('inv-sobrenome').value=u?.sobrenome||'';
   document.getElementById('inv-email').value=u?.email||'';
   document.getElementById('inv-tel').value=u?.tel||'';
   document.getElementById('inv-cargo').value=u?.cargo||'';
-  selectRole(u?.role||'Analista');
+  const role=u?.role||'cliente';
+  const roleMap={'admin':'Administrador','cliente':'Analista','Administrador':'Administrador','Analista':'Analista','Visualizador':'Visualizador'};
+  selectRole(roleMap[role]||'Analista');
+
   const selEmps=u?.empresas||[];
-  document.getElementById('empresa-list').innerHTML=EMPRESAS.map(e=>{
-    const sel=selEmps.find(x=>x.id==e.id);
-    return `<div class="empresa-check-item${sel?' checked':''}" id="emp-item-${e.id}" onclick="toggleEmpCheck(${e.id},event)">
-      <input type="checkbox" id="emp-chk-${e.id}" ${sel?'checked':''} onclick="event.stopPropagation();toggleEmpCheck(${e.id},event)">
-      <div class="empresa-dot" style="background:${e.cor}"></div>
-      <div style="flex:1"><div class="empresa-check-label">${e.fantasia||e.razao}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${e.cnpj}</div></div>
+  document.getElementById('empresa-list').innerHTML=empresasList.map(e=>{
+    const sel=selEmps.find(x=>(x.id||x.empresa_id)==e.id);
+    return`<div class="empresa-check-item${sel?' checked':''}" id="emp-item-${e.id}" onclick="toggleEmpCheck('${e.id}',event)">
+      <input type="checkbox" id="emp-chk-${e.id}" ${sel?'checked':''} onclick="event.stopPropagation();toggleEmpCheck('${e.id}',event)">
+      <div class="empresa-dot" style="background:${e.cor||'#2563eb'}"></div>
+      <div style="flex:1"><div class="empresa-check-label">${e.fantasia||e.razao}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${e.cnpj||''}</div></div>
       <select id="emp-role-${e.id}" onclick="event.stopPropagation()" style="font-size:12px;border:1.5px solid var(--border);border-radius:6px;padding:3px 8px;background:var(--surface);color:var(--text);outline:none;cursor:pointer;${!sel?'opacity:.3;pointer-events:none':''}">
-        <option ${sel?.role==='Administrador'?'selected':''}>Administrador</option>
-        <option ${(!sel||sel?.role==='Analista')?'selected':''}>Analista</option>
+        <option ${sel?.role==='admin'||sel?.role==='Administrador'?'selected':''}>Administrador</option>
+        <option ${!sel||sel?.role==='Analista'||sel?.role==='cliente'?'selected':''}>Analista</option>
         <option ${sel?.role==='Visualizador'?'selected':''}>Visualizador</option>
       </select>
     </div>`;
   }).join('');
   document.getElementById('modal-invite').classList.add('open');
 }
+
 function closeModal(){document.getElementById('modal-invite').classList.remove('open');editingId=null;}
 
 function toggleEmpCheck(id,event){
@@ -436,27 +461,65 @@ function toggleEmpCheck(id,event){
   sel.style.pointerEvents=chk.checked?'auto':'none';
 }
 
-function sendInvite(){
+async function sendInvite(){
   const nome=document.getElementById('inv-nome').value.trim();
   const email=document.getElementById('inv-email').value.trim();
-  const role=document.querySelector('.role-opt.selected input')?.value||'Analista';
+  const roleLabel=document.querySelector('.role-opt.selected input')?.value||'Analista';
+  const roleMap={'Administrador':'admin','Analista':'cliente','Visualizador':'cliente'};
+  const role=roleMap[roleLabel]||'cliente';
   if(!nome||!email){alert('Preencha o nome e e-mail.');return;}
-  const selEmps=EMPRESAS.filter(e=>document.getElementById('emp-chk-'+e.id)?.checked).map(e=>({id:e.id,role:document.getElementById('emp-role-'+e.id)?.value||'Analista'}));
+
+  const selEmps=empresasList
+    .filter(e=>document.getElementById('emp-chk-'+e.id)?.checked)
+    .map(e=>({id:e.id,role:document.getElementById('emp-role-'+e.id)?.value||'Analista'}));
+
   const COLORS=['#2563eb','#059669','#d97706','#7c3aed','#0891b2'];
-  const newU={id:editingId||Date.now(),nome,sobrenome:document.getElementById('inv-sobrenome').value.trim(),email,cargo:document.getElementById('inv-cargo').value,tel:document.getElementById('inv-tel').value,role,status:editingId?users.find(x=>x.id===editingId)?.status:'Pendente',lastAccess:'Nunca',since:new Date().toLocaleDateString('pt-BR',{month:'short',year:'numeric'}),cor:COLORS[users.length%COLORS.length],empresas:selEmps};
-  if(editingId){users=users.map(u=>u.id===editingId?{...u,...newU}:u);showToast('Usuário atualizado ✓');}
-  else{users.push(newU);showToast(`Convite enviado para ${email} ✓`);}
-  saveUsers();renderTable();closeModal();
+  const data={
+    nome, sobrenome:document.getElementById('inv-sobrenome').value.trim(),
+    email, cargo:document.getElementById('inv-cargo').value,
+    tel:document.getElementById('inv-tel').value,
+    role, empresas:selEmps,
+    senha: 'Patrimonium@2026',
+    cor:COLORS[users.length%COLORS.length],
+  };
+
+  try{
+    if(editingId){
+      await UsuariosAPI.update(editingId,data);
+      const idx=users.findIndex(u=>u.id===editingId||u.id==editingId);
+      if(idx>=0)users[idx]={...users[idx],...data};
+      showToast('Usuário atualizado ✓');
+    }else{
+      const res=await UsuariosAPI.create(data);
+      // Reload list
+      await loadUsers();
+      showToast(`Usuário criado! Senha inicial: Patrimonium@2026`);
+    }
+    renderTable();closeModal();
+  }catch(err){showToast('Erro: '+err.message);}
 }
 
 function maskTel(inp){let v=inp.value.replace(/\D/g,'');v=v.replace(/^(\d{2})(\d)/,'($1) $2');v=v.replace(/(\d{5})(\d{4})$/,'$1-$2');inp.value=v;}
-
 function showToast(msg){const t=document.createElement('div');t.className='toast-msg';t.textContent=msg;document.getElementById('toast').appendChild(t);setTimeout(()=>t.remove(),2600);}
 
-function init(){
-  const sel=document.getElementById('f-empresa');
-  EMPRESAS.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.fantasia||e.razao;sel.appendChild(o);});
-  renderTable();
+async function loadUsers(){
+  const res=await UsuariosAPI.list();
+  users=res.usuarios||[];
+}
+
+async function init(){
+  try{
+    const [eRes,uRes]=await Promise.all([EmpresasAPI.list(),UsuariosAPI.list()]);
+    empresasList=eRes.empresas||[];
+    users=uRes.usuarios||[];
+
+    // Populate empresa filter
+    const sel=document.getElementById('f-empresa');
+    empresasList.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.fantasia||e.razao;sel.appendChild(o);});
+    renderTable();
+  }catch(err){
+    showToast('Erro ao carregar dados: '+err.message);
+  }
 }
 init();
 </script>

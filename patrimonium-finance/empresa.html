@@ -378,84 +378,61 @@ nav{padding:12px 10px;flex:1;overflow-y:auto;}
 
 <div id="toast"></div>
 
+<script src="api.js"></script>
 <script>
+// Guard — apenas admin
+requireAdmin();
+initSidebarUser();
+
 const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#db2777','#16a34a','#ea580c','#0284c7'];
 let selectedColor = COLORS[0];
 let editingId = null;
-let filterStatus = '';
-
-const SEGMENTOS = ['Comércio','Serviços','Indústria','Construção Civil','Saúde','Tecnologia','Agronegócio','Contabilidade','Outro'];
-
-let empresas = JSON.parse(localStorage.getItem('pfinance_empresas') || 'null') || [
-  { id:1, razao:'Group SMS Corporation LTDA', fantasia:'Group SMS', cnpj:'12.345.678/0001-99', segmento:'Serviços', regime:'Simples Nacional', porte:'ME — Microempresa', status:'Ativa', cidade:'Belo Horizonte', estado:'MG', cor:'#2563eb', criado:'Jan 2026', usuarios:3 },
-  { id:2, razao:'Acme Comércio e Distribuição LTDA', fantasia:'Acme Dist.', cnpj:'98.765.432/0001-11', segmento:'Comércio', regime:'Lucro Presumido', porte:'Médio Porte', status:'Ativa', cidade:'São Paulo', estado:'SP', cor:'#059669', criado:'Fev 2026', usuarios:2 },
-  { id:3, razao:'Tech Solutions Tecnologia S/A', fantasia:'TechSol', cnpj:'11.222.333/0001-44', segmento:'Tecnologia', regime:'Lucro Real', porte:'EPP — Pequeno Porte', status:'Trial', cidade:'Curitiba', estado:'PR', cor:'#7c3aed', criado:'Mar 2026', usuarios:1 },
-];
-saveEmpresas();
-
-function saveEmpresas() { localStorage.setItem('pfinance_empresas', JSON.stringify(empresas)); }
+let empresas = [];
 
 function getInitials(name) {
-  return name.split(' ').filter(w => w.length > 2).slice(0,2).map(w => w[0]).join('').toUpperCase() || name.substring(0,2).toUpperCase();
+  return name.split(' ').filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('').toUpperCase() || name.substring(0,2).toUpperCase();
 }
 
 function updateStats() {
   document.getElementById('stat-total').textContent = empresas.length;
   document.getElementById('stat-ativas').textContent = empresas.filter(e=>e.status==='Ativa').length;
-  document.getElementById('stat-trial').textContent = empresas.filter(e=>e.status==='Trial').length;
+  document.getElementById('stat-trial').textContent  = empresas.filter(e=>e.status==='Trial').length;
 }
 
 function populateSegmentoFilter() {
   const segs = [...new Set(empresas.map(e=>e.segmento).filter(Boolean))].sort();
-  const sel = document.getElementById('filter-segmento');
+  const sel  = document.getElementById('filter-segmento');
   sel.innerHTML = '<option value="">Todos os segmentos</option>' + segs.map(s=>`<option>${s}</option>`).join('');
 }
 
 function renderCards(q='', status='') {
-  filterStatus = status || filterStatus;
-  const segFil = document.getElementById('filter-segmento')?.value || '';
+  const segFil = document.getElementById('filter-segmento')?.value||'';
   const query  = (q||'').toLowerCase();
-
   let list = empresas.filter(e => {
     const matchQ = !query || (e.razao+e.fantasia+e.cnpj+e.segmento).toLowerCase().includes(query);
-    const matchS = !filterStatus || e.status === filterStatus;
-    const matchSeg = !segFil || e.segmento === segFil;
-    return matchQ && matchS && matchSeg;
+    const matchS = !status || e.status===status;
+    const matchSeg = !segFil || e.segmento===segFil;
+    return matchQ&&matchS&&matchSeg;
   });
-
   document.getElementById('count-label').textContent = `${list.length} empresa(s)`;
-
   const grid = document.getElementById('empresa-grid');
   grid.innerHTML = list.map(e => `
-    <div class="empresa-card" onclick="openDetail(${e.id})">
+    <div class="empresa-card" onclick="openDetail('${e.id}')">
       <div class="empresa-card-header">
-        <div class="empresa-avatar" style="background:${e.cor}">${getInitials(e.fantasia||e.razao)}</div>
-        <div>
-          <div class="empresa-name">${e.fantasia || e.razao}</div>
-          <div class="empresa-cnpj">${e.cnpj}</div>
-        </div>
+        <div class="empresa-avatar" style="background:${e.cor||'#2563eb'}">${getInitials(e.fantasia||e.razao)}</div>
+        <div><div class="empresa-name">${e.fantasia||e.razao}</div><div class="empresa-cnpj">${e.cnpj||''}</div></div>
       </div>
       <div class="empresa-meta">
         <div class="empresa-meta-item"><div class="empresa-meta-label">Segmento</div><div class="empresa-meta-val">${e.segmento||'—'}</div></div>
         <div class="empresa-meta-item"><div class="empresa-meta-label">Regime</div><div class="empresa-meta-val">${e.regime||'—'}</div></div>
         <div class="empresa-meta-item"><div class="empresa-meta-label">Cidade/UF</div><div class="empresa-meta-val">${e.cidade?e.cidade+', '+e.estado:e.estado||'—'}</div></div>
-        <div class="empresa-meta-item"><div class="empresa-meta-label">Usuários</div><div class="empresa-meta-val">${e.usuarios||0} acesso(s)</div></div>
+        <div class="empresa-meta-item"><div class="empresa-meta-label">Status</div><div class="empresa-meta-val">${e.status||'—'}</div></div>
       </div>
       <div class="empresa-card-footer">
-        <span class="badge badge-${e.status==='Ativa'?'ativa':e.status==='Trial'?'trial':'inativa'}">${e.status}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="badge badge-plano">${e.plano||'Profissional'}</span>
-          <div class="action-menu">
-            <button class="action-btn" onclick="event.stopPropagation();toggleMenu(event,${e.id})">⋯</button>
-            <div class="dropdown" id="menu-${e.id}">
-              <div class="dropdown-item" onclick="event.stopPropagation();editEmpresa(${e.id})">✏️ Editar</div>
-              <div class="dropdown-item" onclick="event.stopPropagation();toggleStatus(${e.id})">
-                ${e.status==='Ativa'?'🔒 Desativar':'✅ Ativar'}
-              </div>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-item danger" onclick="event.stopPropagation();removeEmpresa(${e.id})">🗑 Remover</div>
-            </div>
-          </div>
+        <span class="badge badge-${e.status==='Ativa'?'ativa':e.status==='Trial'?'trial':'inativa'}">${e.status||'—'}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editEmpresa('${e.id}')">✏ Editar</button>
+          <button class="btn btn-xs" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)" onclick="event.stopPropagation();removeEmpresa('${e.id}')">🗑</button>
         </div>
       </div>
     </div>
@@ -463,38 +440,34 @@ function renderCards(q='', status='') {
     <div class="empresa-card-add" onclick="openModal()">
       <div class="add-icon">＋</div>
       <div style="font-size:14px;font-weight:600;color:var(--text2)">Adicionar empresa</div>
-      <div style="font-size:12px;color:var(--text3)">Clique para cadastrar uma nova empresa</div>
+      <div style="font-size:12px;color:var(--text3)">Clique para cadastrar</div>
     </div>
   `;
   updateStats();
 }
 
-function openDetail(id) {
+function openDetail(id) { editEmpresa(id); }
+
+async function toggleStatus(id) {
   const e = empresas.find(x=>x.id===id);
   if (!e) return;
-  // For now, open edit modal
-  editEmpresa(id);
+  const newStatus = e.status==='Ativa'?'Inativa':'Ativa';
+  try {
+    await EmpresasAPI.update(id, {...e, status: newStatus});
+    e.status = newStatus;
+    renderCards();
+    showToast(`${e.fantasia||e.razao} ${newStatus==='Ativa'?'ativada':'desativada'}.`);
+  } catch(err) { showToast('Erro: '+err.message); }
 }
 
-function toggleMenu(ev, id) {
-  ev.stopPropagation();
-  document.querySelectorAll('.dropdown').forEach(d=>{ if(d.id!=='menu-'+id) d.classList.remove('open'); });
-  document.getElementById('menu-'+id)?.classList.toggle('open');
-}
-document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('open')));
-
-function toggleStatus(id) {
+async function removeEmpresa(id) {
   const e = empresas.find(x=>x.id===id);
-  if (!e) return;
-  e.status = e.status==='Ativa'?'Inativa':'Ativa';
-  saveEmpresas(); renderCards(); showToast(`${e.fantasia||e.razao} ${e.status==='Ativa'?'ativada':'desativada'}.`);
-}
-
-function removeEmpresa(id) {
-  const e = empresas.find(x=>x.id===id);
-  if (!confirm(`Remover "${e?.razao}"? Esta ação não pode ser desfeita.`)) return;
-  empresas = empresas.filter(x=>x.id!==id);
-  saveEmpresas(); renderCards(); showToast('Empresa removida.');
+  if (!confirm(`Remover "${e?.razao}"?`)) return;
+  try {
+    await EmpresasAPI.delete(id);
+    empresas = empresas.filter(x=>x.id!==id);
+    renderCards(); showToast('Empresa removida.');
+  } catch(err) { showToast('Erro: '+err.message); }
 }
 
 // ── MODAL ──
@@ -513,30 +486,24 @@ function openModal(editId=null) {
   document.getElementById('f-estado').value   = e?.estado||'';
   selectedColor = e?.cor || COLORS[0];
   document.querySelectorAll('.color-swatch').forEach(s => {
-    s.classList.toggle('selected', s.dataset.color === selectedColor);
+    s.classList.toggle('selected', s.dataset.color===selectedColor);
   });
   document.getElementById('modal-empresa').classList.add('open');
 }
 
 function editEmpresa(id) { openModal(id); }
-
-function closeModal() {
-  document.getElementById('modal-empresa').classList.remove('open');
-  editingId = null;
-}
+function closeModal() { document.getElementById('modal-empresa').classList.remove('open'); editingId=null; }
 
 function selectColor(c) {
   selectedColor = c;
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color===c));
 }
 
-function saveEmpresa() {
+async function saveEmpresa() {
   const razao = document.getElementById('f-razao').value.trim();
-  const cnpj  = document.getElementById('f-cnpj').value.trim();
   if (!razao) { alert('Preencha a Razão Social.'); return; }
-
   const data = {
-    razao, cnpj,
+    razao, cnpj: document.getElementById('f-cnpj').value.trim(),
     fantasia: document.getElementById('f-fantasia').value.trim(),
     segmento: document.getElementById('f-segmento').value,
     regime:   document.getElementById('f-regime').value,
@@ -545,43 +512,49 @@ function saveEmpresa() {
     cidade:   document.getElementById('f-cidade').value.trim(),
     estado:   document.getElementById('f-estado').value,
     cor:      selectedColor,
-    plano:    'Profissional',
-    usuarios: 1,
-    criado:   new Date().toLocaleDateString('pt-BR',{month:'short',year:'numeric'}),
   };
-
-  if (editingId) {
-    const idx = empresas.findIndex(x=>x.id===editingId);
-    if (idx>=0) empresas[idx] = {...empresas[idx],...data};
-    showToast('Empresa atualizada ✓');
-  } else {
-    data.id = Date.now();
-    empresas.push(data);
-    showToast('Empresa cadastrada ✓');
-  }
-  saveEmpresas(); renderCards(); closeModal();
-  populateSegmentoFilter();
+  try {
+    if (editingId) {
+      await EmpresasAPI.update(editingId, data);
+      const idx = empresas.findIndex(x=>x.id===editingId);
+      if (idx>=0) empresas[idx] = {...empresas[idx], ...data};
+      showToast('Empresa atualizada ✓');
+    } else {
+      const res = await EmpresasAPI.create(data);
+      empresas.push(res.empresa);
+      showToast('Empresa cadastrada ✓');
+    }
+    renderCards(); closeModal(); populateSegmentoFilter();
+  } catch(err) { showToast('Erro: '+err.message); }
 }
 
 function maskCNPJ(inp) {
-  let v = inp.value.replace(/\D/g,'');
-  v = v.replace(/^(\d{2})(\d)/,'$1.$2');
-  v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
-  v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
-  v = v.replace(/(\d{4})(\d)/,'$1-$2');
-  inp.value = v;
+  let v=inp.value.replace(/\D/g,'');
+  v=v.replace(/^(\d{2})(\d)/,'$1.$2');
+  v=v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+  v=v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+  v=v.replace(/(\d{4})(\d)/,'$1-$2');
+  inp.value=v;
 }
 
 function showToast(msg) {
-  const t = document.createElement('div');
-  t.className='toast-msg'; t.textContent=msg;
+  const t=document.createElement('div'); t.className='toast-msg'; t.textContent=msg;
   document.getElementById('toast').appendChild(t);
   setTimeout(()=>t.remove(),2600);
 }
 
-// Init
-populateSegmentoFilter();
-renderCards();
+// ── INIT ──
+async function init() {
+  try {
+    const res = await EmpresasAPI.list();
+    empresas = res.empresas || [];
+    populateSegmentoFilter();
+    renderCards();
+  } catch(err) {
+    showToast('Erro ao carregar empresas: '+err.message);
+  }
+}
+init();
 </script>
 </body>
 </html>

@@ -855,7 +855,14 @@ hr.divider{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
 <div id="main">
   <div id="topbar">
     <div class="topbar-title" id="topbar-title">Importar Planilha</div>
-    <div class="topbar-actions" id="topbar-actions"></div>
+    <div class="topbar-actions" id="topbar-actions">
+      <select id="empresa-selector" style="display:none;background:var(--s2);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;cursor:pointer" onchange="onEmpresaChange(this.value)">
+        <option value="">Selecione a empresa...</option>
+      </select>
+      <button id="btn-save-server" style="display:none" class="btn btn-primary btn-sm" onclick="saveToServer()">
+        ☁ Salvar no servidor
+      </button>
+    </div>
   </div>
   <div id="content">
 
@@ -4968,6 +4975,124 @@ function chartOpts(type, showLegend) {
   };
 }
 const PIE_COLORS=['#2563eb','#059669','#d97706','#7c3aed','#0891b2','#dc2626','#16a34a','#ea580c','#db2777','#0284c7','#ca8a04','#4f46e5'];
+</script>
+<script src="api.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  INTEGRAÇÃO COM BACKEND
+// ═══════════════════════════════════════════════════════
+let _empresaId = null;
+
+async function initBackend() {
+  if (!window.Auth || !Auth.getToken()) {
+    // Modo offline (arquivo local) — continua sem backend
+    return;
+  }
+  try {
+    const res = await EmpresasAPI.list();
+    const empresas = res.empresas || [];
+    const sel = document.getElementById('empresa-selector');
+    if (!sel) return;
+    if (empresas.length === 0) {
+      showToast('Nenhuma empresa cadastrada.');
+      return;
+    }
+    sel.innerHTML = '<option value="">Selecione a empresa...</option>' +
+      empresas.map(e=>`<option value="${e.id}">${e.fantasia||e.razao}</option>`).join('');
+    sel.style.display = 'block';
+    const savedId = Auth.getEmpresaId();
+    if (savedId && empresas.find(e=>e.id===savedId)) {
+      sel.value = savedId;
+      await loadEmpresaData(savedId);
+    } else if (empresas.length === 1) {
+      sel.value = empresas[0].id;
+      await loadEmpresaData(empresas[0].id);
+    }
+    if (Auth.isAdmin()) {
+      const btn = document.getElementById('btn-save-server');
+      if (btn) btn.style.display = 'inline-flex';
+    }
+    initSidebarUser();
+  } catch(err) {
+    console.warn('Backend indisponível, modo offline:', err.message);
+  }
+}
+
+async function onEmpresaChange(id) {
+  if (!id) return;
+  Auth.setEmpresaId(id);
+  await loadEmpresaData(id);
+}
+
+async function loadEmpresaData(empresaId) {
+  _empresaId = empresaId;
+  showToast('⏳ Carregando dados...');
+  try {
+    const [txRes, mapRes] = await Promise.all([
+      TransacoesAPI.get(empresaId),
+      MapeamentosAPI.get(empresaId),
+    ]);
+    if (mapRes.mapeamentos) {
+      const m = mapRes.mapeamentos;
+      if (m.category_map) { S.categoryMap = m.category_map; localStorage.setItem('pfinance_catmap', JSON.stringify(m.category_map)); }
+      if (m.plano_contas?.length) { PC = m.plano_contas; rebuildPC(); localStorage.setItem('pfinance_pc', JSON.stringify(PC)); }
+      if (m.balanco_manual) localStorage.setItem('pfinance_balanco_manual', JSON.stringify(m.balanco_manual));
+      if (m.balanco_corte)  localStorage.setItem('pfinance_balanco_corte',  JSON.stringify(m.balanco_corte));
+    }
+    if (txRes.transacoes?.length) {
+      S.transactions = txRes.transacoes.map(t => ({
+        dataCompetencia: t.data_competencia ? new Date(t.data_competencia) : null,
+        dataPagamento:   t.data_pagamento   ? new Date(t.data_pagamento)   : null,
+        dataMovimento:   t.data_movimento   ? new Date(t.data_movimento)   : null,
+        nomeContraparte: t.nome_contraparte || '',
+        descricao:       t.descricao        || '',
+        contaBancaria:   t.conta_bancaria   || '',
+        situacao:        t.situacao         || '',
+        valorTotal:      t.valor_total      || 0,
+        cats:            typeof t.cats_json==='string' ? JSON.parse(t.cats_json) : (t.cats_json||[]),
+      }));
+      normalizeTransactions();
+      goStep(4);
+      const empNome = document.getElementById('empresa-selector')?.options[document.getElementById('empresa-selector').selectedIndex]?.text || '';
+      document.getElementById('file-name').textContent = empNome;
+      document.getElementById('file-rows').textContent = `${S.transactions.length} lançamentos`;
+      document.getElementById('file-info').style.display = 'block';
+      showToast(`✓ ${S.transactions.length} lançamentos carregados`);
+    } else {
+      showToast('Empresa sem dados. Importe uma planilha.');
+    }
+  } catch(err) { showToast('Erro: ' + err.message); }
+}
+
+async function saveToServer() {
+  if (!_empresaId) { showToast('Selecione uma empresa.'); return; }
+  if (!S.transactions?.length) { showToast('Nenhum dado para salvar.'); return; }
+  const btn = document.getElementById('btn-save-server');
+  if (btn) { btn.textContent = '⏳ Salvando...'; btn.disabled = true; }
+  try {
+    await TransacoesAPI.save(_empresaId, S.transactions.map(t => ({
+      dataCompetencia: t.dataCompetencia?.toISOString?.() || null,
+      dataPagamento:   t.dataPagamento?.toISOString?.()   || null,
+      dataMovimento:   t.dataMovimento?.toISOString?.()   || null,
+      nomeContraparte: t.nomeContraparte || '',
+      descricao:       t.descricao       || '',
+      contaBancaria:   t.conta_bancaria  || '',
+      situacao:        t.situacao        || '',
+      valorTotal:      t.valorTotal      || 0,
+      cats:            t.cats            || [],
+    })));
+    await MapeamentosAPI.save(_empresaId, {
+      category_map:   S.categoryMap || {},
+      plano_contas:   PC || [],
+      balanco_manual: JSON.parse(localStorage.getItem('pfinance_balanco_manual')||'{}'),
+      balanco_corte:  JSON.parse(localStorage.getItem('pfinance_balanco_corte') ||'{}'),
+    });
+    showToast('✓ Dados salvos no servidor!');
+  } catch(err) { showToast('Erro: ' + err.message); }
+  finally { if(btn){btn.textContent='☁ Salvar no servidor';btn.disabled=false;} }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{ if(window.Auth) initBackend(); });
 </script>
 </body>
 </html>
