@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patrimonium Finance — Empresas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sb-bg:#1b2740;--sb-hover:rgba(255,255,255,.06);--sb-active:rgba(255,255,255,.1);
+  --sb-border:rgba(255,255,255,.07);--sb-text:#e8edf5;--sb-text2:#8b9ab5;--sb-text3:#4a5873;
+  --sb-accent:#4f8ef7;
+  --bg:#f4f6fb;--surface:#ffffff;--s2:#f8f9fd;--s3:#eef1f8;--s4:#e3e8f3;
+  --border:#dde3f0;--border2:#c8d1e8;
+  --shadow:0 1px 3px rgba(26,41,64,.06),0 4px 16px rgba(26,41,64,.04);
+  --shadow-md:0 4px 24px rgba(26,41,64,.1);
+  --text:#111827;--text2:#4b5673;--text3:#8b97b4;
+  --accent:#2563eb;--accent-hover:#1d4ed8;
+  --accent-light:rgba(37,99,235,.08);--accent-light2:rgba(37,99,235,.15);
+  --green:#059669;--green-light:rgba(5,150,105,.08);--green-border:rgba(5,150,105,.2);
+  --red:#dc2626;--red-light:rgba(220,38,38,.08);--red-border:rgba(220,38,38,.2);
+  --amber:#d97706;--amber-light:rgba(217,119,6,.08);--amber-border:rgba(217,119,6,.2);
+  --purple:#7c3aed;--purple-light:rgba(124,58,237,.08);
+  --font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:8px;--sw:252px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;font-size:13.5px;-webkit-font-smoothing:antialiased;}
+a{text-decoration:none;color:inherit;}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sw);min-height:100vh;background:var(--sb-bg);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;z-index:100;}
+.logo-wrap{padding:20px;border-bottom:1px solid var(--sb-border);display:flex;align-items:center;gap:11px;}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.4);}
+.logo-text{font-size:16px;font-weight:700;color:var(--sb-text);letter-spacing:-.3px;}
+.logo-sub{font-size:9.5px;color:var(--sb-text3);margin-top:1px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;}
+nav{padding:12px 10px;flex:1;overflow-y:auto;}
+.nav-section{margin:14px 0 4px;padding:2px 10px;font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:var(--sb-text3);font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;cursor:pointer;color:var(--sb-text2);transition:all .15s;font-size:13px;font-weight:500;}
+.nav-item:hover{background:var(--sb-hover);color:var(--sb-text);}
+.nav-item.active{background:var(--sb-active);color:#fff;}
+.nav-item.active .nav-icon{opacity:1;color:var(--sb-accent);}
+.nav-icon{font-size:14px;opacity:.45;transition:opacity .15s;}
+.nav-item:hover .nav-icon{opacity:.7;}
+.sb-footer{padding:14px 16px;border-top:1px solid var(--sb-border);}
+.sb-user{display:flex;align-items:center;gap:10px;}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-user-name{font-size:13px;font-weight:600;color:var(--sb-text);}
+.sb-user-role{font-size:11px;color:var(--sb-text3);}
+
+/* ── MAIN ── */
+#main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);}
+.breadcrumb-sep{color:var(--text3);}
+.breadcrumb-cur{font-weight:600;color:var(--text);}
+#content{padding:28px 30px;flex:1;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--r);border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;font-family:var(--font);}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.3),0 4px 12px rgba(37,99,235,.2);}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);}
+.btn-secondary{background:var(--s3);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--s4);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--s2);color:var(--text);}
+.btn-sm{padding:5px 13px;font-size:12px;}
+.btn-xs{padding:3px 9px;font-size:11px;}
+
+/* ── PAGE HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.4px;margin-bottom:4px;}
+.page-sub{font-size:13.5px;color:var(--text2);}
+
+/* ── STATS ── */
+.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px 20px;box-shadow:var(--shadow);}
+.stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:7px;}
+.stat-value{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--text);}
+.stat-sub{font-size:11.5px;color:var(--text2);margin-top:3px;}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.search-box{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:280px;transition:border-color .15s;}
+.search-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.filter-select{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;cursor:pointer;}
+
+/* ── CARD GRID ── */
+.empresa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:32px;}
+.empresa-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow);transition:all .2s;cursor:pointer;position:relative;}
+.empresa-card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.empresa-card.active-card{border-color:var(--accent);background:rgba(37,99,235,.02);}
+.empresa-card-header{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.empresa-avatar{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+.empresa-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.empresa-cnpj{font-size:11.5px;color:var(--text3);font-family:var(--mono);}
+.empresa-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.empresa-meta-item{display:flex;flex-direction:column;gap:2px;}
+.empresa-meta-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.empresa-meta-val{font-size:12.5px;color:var(--text2);}
+.empresa-card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+.badge-ativa{background:var(--green-light);color:var(--green);}
+.badge-inativa{background:var(--red-light);color:var(--red);}
+.badge-trial{background:var(--amber-light);color:var(--amber);}
+.badge-plano{background:var(--accent-light2);color:var(--accent);}
+
+/* ── ADD CARD ── */
+.empresa-card-add{background:var(--s2);border:2px dashed var(--border2);border-radius:12px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:all .2s;min-height:200px;}
+.empresa-card-add:hover{border-color:var(--accent);background:var(--accent-light);}
+.add-icon{width:44px;height:44px;border-radius:10px;background:var(--accent-light2);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--accent);}
+
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.4);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(17,24,39,.2);animation:modalIn .2s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(.97)translateY(10px)}to{opacity:1;transform:none}}
+.modal-header{padding:22px 28px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:16px 16px 0 0;}
+.modal-title{font-size:17px;font-weight:700;letter-spacing:-.2px;}
+.modal-sub{font-size:12.5px;color:var(--text2);margin-top:3px;}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:2px 6px;border-radius:6px;line-height:1;}
+.modal-close:hover{background:var(--s3);color:var(--text);}
+.modal-body{padding:28px;}
+.modal-footer{padding:18px 28px;border-top:1.5px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:var(--s2);border-radius:0 0 16px 16px;}
+
+/* ── FORM ── */
+.form-section{margin-bottom:24px;}
+.form-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid rgba(37,99,235,.15);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.span2{grid-column:span 2;}
+.form-label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);}
+.form-label .req{color:var(--red);}
+.form-input,.form-select{background:var(--s2);border:1.5px solid var(--border);border-radius:var(--r);padding:9px 13px;color:var(--text);font-family:var(--font);font-size:13.5px;outline:none;transition:border-color .15s,box-shadow .15s;width:100%;}
+.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.form-select{cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b97b4' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.form-hint{font-size:11.5px;color:var(--text3);margin-top:2px;}
+
+/* ── COLOR PICKER ── */
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.color-swatch{width:28px;height:28px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.color-swatch:hover{transform:scale(1.15);}
+.color-swatch.selected{border-color:var(--text);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text);}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.detail-panel-header{background:linear-gradient(135deg,#1b2740,#2a3e5c);padding:24px 28px;display:flex;align-items:center;gap:18px;}
+.detail-avatar-big{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0;}
+.detail-name{font-size:20px;font-weight:700;color:#fff;margin-bottom:3px;}
+.detail-cnpj{font-size:12px;color:rgba(255,255,255,.55);font-family:var(--mono);}
+.detail-tabs{display:flex;border-bottom:1.5px solid var(--border);background:var(--s2);}
+.detail-tab{padding:11px 22px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.detail-tab:hover{color:var(--text);}
+.detail-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface);}
+.detail-body{padding:24px 28px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.info-item{display:flex;flex-direction:column;gap:4px;}
+.info-item-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);}
+.info-item-val{font-size:14px;color:var(--text);font-weight:500;}
+.action-row{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1.5px solid var(--border);}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast-msg{background:var(--sb-bg);color:#93c5fd;font-size:12.5px;font-weight:600;padding:10px 18px;border-radius:var(--r);border:1px solid rgba(37,99,235,.3);box-shadow:var(--shadow-md);animation:tin .2s ease,tout .3s ease 2.3s forwards;}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tout{from{opacity:1}to{opacity:0}}
+
+/* ── DROPDOWN CONTEXT MENU ── */
+.action-menu{position:relative;}
+.action-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:4px 8px;border-radius:6px;transition:all .15s;line-height:1;}
+.action-btn:hover{background:var(--s3);color:var(--text);}
+.dropdown{position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);min-width:180px;box-shadow:var(--shadow-md);z-index:50;display:none;}
+.dropdown.open{display:block;}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:background .12s;color:var(--text);}
+.dropdown-item:hover{background:var(--s2);}
+.dropdown-item.danger{color:var(--red);}
+.dropdown-item.danger:hover{background:var(--red-light);}
+.dropdown-divider{border-bottom:1px solid var(--border);margin:4px 0;}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-mark">PF</div>
+    <div>
+      <div class="logo-text">Patrimonium Finance</div>
+      <div class="logo-sub">BPO Contábil & Financeiro</div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">Configuração</div>
+    <a href="finreport.html" class="nav-item"><span class="nav-icon">📥</span> Importar Planilha</a>
+    <a href="finreport.html" class="nav-item"><span class="nav-icon">🗂</span> Plano de Contas</a>
+    <div class="nav-section">Relatórios</div>
+    <a href="finreport.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="finreport.html" class="nav-item"><span class="nav-icon">📋</span> DRE</a>
+    <a href="finreport.html" class="nav-item"><span class="nav-icon">💸</span> DFC</a>
+    <a href="finreport.html" class="nav-item"><span class="nav-icon">⚖</span> Balanço</a>
+    <div class="nav-section">Administração</div>
+    <a href="empresa.html" class="nav-item active"><span class="nav-icon">🏢</span> Empresas</a>
+    <a href="usuarios.html" class="nav-item"><span class="nav-icon">👥</span> Usuários</a>
+    <a href="#" class="nav-item"><span class="nav-icon">💳</span> Assinatura</a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-user-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div class="sb-user-name" id="sb-user-name">—</div>
+        <div class="sb-user-role" id="sb-user-role">—</div>
+      </div>
+      <button onclick="if(window.AuthAPI)AuthAPI.logout();else{localStorage.clear();window.location.href='login.html';}" title="Sair"
+        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:5px 8px;color:var(--sb-text2);font-size:11px;cursor:pointer;flex-shrink:0"
+        onmouseover="this.style.background='rgba(220,38,38,.2)';this.style.color='#fca5a5'"
+        onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='var(--sb-text2)'">⎋ Sair</button>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <div class="breadcrumb">
+      <span>Patrimonium Finance</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-cur">Empresas</span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="openModal()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Nova Empresa
+      </button>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Empresas</div>
+        <div class="page-sub">Gerencie as empresas cadastradas no Patrimonium Finance.</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-strip">
+      <div class="stat-card"><div class="stat-label">Total de Empresas</div><div class="stat-value" id="stat-total">0</div><div class="stat-sub">cadastradas</div></div>
+      <div class="stat-card"><div class="stat-label">Ativas</div><div class="stat-value" id="stat-ativas" style="color:var(--green)">0</div><div class="stat-sub">com acesso</div></div>
+      <div class="stat-card"><div class="stat-label">Em Trial</div><div class="stat-value" id="stat-trial" style="color:var(--amber)">0</div><div class="stat-sub">período de teste</div></div>
+      <div class="stat-card"><div class="stat-label">Plano</div><div class="stat-value" style="font-size:16px;color:var(--accent)">Escritório</div><div class="stat-sub">empresas ilimitadas</div></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" class="search-box" placeholder="🔍 Buscar empresa, CNPJ, segmento..." oninput="renderCards(this.value)">
+      <select class="filter-select" onchange="renderCards(document.querySelector('.search-box').value, this.value)">
+        <option value="">Todos os status</option>
+        <option value="Ativa">Ativas</option>
+        <option value="Inativa">Inativas</option>
+        <option value="Trial">Em trial</option>
+      </select>
+      <select class="filter-select" id="filter-segmento" onchange="renderCards(document.querySelector('.search-box').value)">
+        <option value="">Todos os segmentos</option>
+      </select>
+      <span id="count-label" style="font-size:12.5px;color:var(--text2);margin-left:auto"></span>
+    </div>
+
+    <!-- Grid -->
+    <div class="empresa-grid" id="empresa-grid"></div>
+  </div>
+</div>
+
+<!-- MODAL NOVA/EDITAR EMPRESA -->
+<div class="modal-backdrop" id="modal-empresa">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Nova Empresa</div>
+        <div class="modal-sub">Preencha os dados para cadastrar a empresa no Patrimonium Finance.</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-section">
+        <div class="form-section-title">Identificação</div>
+        <div class="form-grid">
+          <div class="form-group span2">
+            <label class="form-label">Razão Social <span class="req">*</span></label>
+            <input id="f-razao" type="text" class="form-input" placeholder="Nome Empresarial LTDA">
+          </div>
+          <div class="form-group">
+            <label class="form-label">CNPJ <span class="req">*</span></label>
+            <input id="f-cnpj" type="text" class="form-input" placeholder="00.000.000/0001-00" maxlength="18" oninput="maskCNPJ(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome Fantasia</label>
+            <input id="f-fantasia" type="text" class="form-input" placeholder="Como é conhecida">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Classificação</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Segmento <span class="req">*</span></label>
+            <select id="f-segmento" class="form-select">
+              <option value="">Selecione...</option>
+              <option>Comércio</option><option>Serviços</option><option>Indústria</option>
+              <option>Construção Civil</option><option>Saúde</option><option>Tecnologia</option>
+              <option>Agronegócio</option><option>Contabilidade</option><option>Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Regime Tributário</label>
+            <select id="f-regime" class="form-select">
+              <option value="">Selecione...</option>
+              <option>Simples Nacional</option><option>Lucro Presumido</option>
+              <option>Lucro Real</option><option>MEI</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Porte</label>
+            <select id="f-porte" class="form-select">
+              <option value="">Selecione...</option>
+              <option>MEI</option><option>ME — Microempresa</option>
+              <option>EPP — Pequeno Porte</option><option>Médio Porte</option>
+              <option>Grande Porte</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="f-status" class="form-select">
+              <option>Ativa</option><option>Trial</option><option>Inativa</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Localização</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Cidade</label>
+            <input id="f-cidade" type="text" class="form-input" placeholder="Belo Horizonte">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estado</label>
+            <select id="f-estado" class="form-select">
+              <option value="">UF</option>
+              <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
+              <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
+              <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
+              <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
+              <option>SE</option><option>SP</option><option>TO</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Período Visível para o Cliente</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">O cliente só visualizará transações dentro deste intervalo. Deixe em branco para mostrar tudo.</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Data Início</label>
+            <input id="f-periodo-inicio" type="month" class="form-input">
+            <div class="form-hint">Ex: 2025-01</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data Fim</label>
+            <input id="f-periodo-fim" type="month" class="form-input">
+            <div class="form-hint">Ex: 2026-12</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section" style="margin-bottom:0">
+        <div class="form-section-title">Cor de identificação</div>
+        <div class="color-picker" id="color-picker">
+          <div class="color-swatch selected" style="background:#2563eb" data-color="#2563eb" onclick="selectColor('#2563eb')"></div>
+          <div class="color-swatch" style="background:#059669" data-color="#059669" onclick="selectColor('#059669')"></div>
+          <div class="color-swatch" style="background:#d97706" data-color="#d97706" onclick="selectColor('#d97706')"></div>
+          <div class="color-swatch" style="background:#dc2626" data-color="#dc2626" onclick="selectColor('#dc2626')"></div>
+          <div class="color-swatch" style="background:#7c3aed" data-color="#7c3aed" onclick="selectColor('#7c3aed')"></div>
+          <div class="color-swatch" style="background:#0891b2" data-color="#0891b2" onclick="selectColor('#0891b2')"></div>
+          <div class="color-swatch" style="background:#db2777" data-color="#db2777" onclick="selectColor('#db2777')"></div>
+          <div class="color-swatch" style="background:#16a34a" data-color="#16a34a" onclick="selectColor('#16a34a')"></div>
+          <div class="color-swatch" style="background:#ea580c" data-color="#ea580c" onclick="selectColor('#ea580c')"></div>
+          <div class="color-swatch" style="background:#0284c7" data-color="#0284c7" onclick="selectColor('#0284c7')"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEmpresa()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+        Salvar empresa
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="api.js"></script>
+<script>
+// Guard — apenas admin
+requireAdmin();
+initSidebarUser();
+
+const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#db2777','#16a34a','#ea580c','#0284c7'];
+let selectedColor = COLORS[0];
+let editingId = null;
+let empresas = [];
+
+function getInitials(name) {
+  return name.split(' ').filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('').toUpperCase() || name.substring(0,2).toUpperCase();
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = empresas.length;
+  document.getElementById('stat-ativas').textContent = empresas.filter(e=>e.status==='Ativa').length;
+  document.getElementById('stat-trial').textContent  = empresas.filter(e=>e.status==='Trial').length;
+}
+
+function populateSegmentoFilter() {
+  const segs = [...new Set(empresas.map(e=>e.segmento).filter(Boolean))].sort();
+  const sel  = document.getElementById('filter-segmento');
+  sel.innerHTML = '<option value="">Todos os segmentos</option>' + segs.map(s=>`<option>${s}</option>`).join('');
+}
+
+function renderCards(q='', status='') {
+  const segFil = document.getElementById('filter-segmento')?.value||'';
+  const query  = (q||'').toLowerCase();
+  let list = empresas.filter(e => {
+    const matchQ = !query || (e.razao+e.fantasia+e.cnpj+e.segmento).toLowerCase().includes(query);
+    const matchS = !status || e.status===status;
+    const matchSeg = !segFil || e.segmento===segFil;
+    return matchQ&&matchS&&matchSeg;
+  });
+  document.getElementById('count-label').textContent = `${list.length} empresa(s)`;
+  const grid = document.getElementById('empresa-grid');
+  grid.innerHTML = list.map(e => `
+    <div class="empresa-card" onclick="openDetail('${e.id}')">
+      <div class="empresa-card-header">
+        <div class="empresa-avatar" style="background:${e.cor||'#2563eb'}">${getInitials(e.fantasia||e.razao)}</div>
+        <div><div class="empresa-name">${e.fantasia||e.razao}</div><div class="empresa-cnpj">${e.cnpj||''}</div></div>
+      </div>
+      <div class="empresa-meta">
+        <div class="empresa-meta-item"><div class="empresa-meta-label">Segmento</div><div class="empresa-meta-val">${e.segmento||'—'}</div></div>
+        <div class="empresa-meta-item"><div class="empresa-meta-label">Regime</div><div class="empresa-meta-val">${e.regime||'—'}</div></div>
+        <div class="empresa-meta-item"><div class="empresa-meta-label">Cidade/UF</div><div class="empresa-meta-val">${e.cidade?e.cidade+', '+e.estado:e.estado||'—'}</div></div>
+        <div class="empresa-meta-item"><div class="empresa-meta-label">Status</div><div class="empresa-meta-val">${e.status||'—'}</div></div>
+      </div>
+      <div class="empresa-card-footer">
+        <span class="badge badge-${e.status==='Ativa'?'ativa':e.status==='Trial'?'trial':'inativa'}">${e.status||'—'}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editEmpresa('${e.id}')">✏ Editar</button>
+          <button class="btn btn-xs" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)" onclick="event.stopPropagation();removeEmpresa('${e.id}')">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="empresa-card-add" onclick="openModal()">
+      <div class="add-icon">＋</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text2)">Adicionar empresa</div>
+      <div style="font-size:12px;color:var(--text3)">Clique para cadastrar</div>
+    </div>
+  `;
+  updateStats();
+}
+
+function openDetail(id) { editEmpresa(id); }
+
+async function toggleStatus(id) {
+  const e = empresas.find(x=>x.id===id);
+  if (!e) return;
+  const newStatus = e.status==='Ativa'?'Inativa':'Ativa';
+  try {
+    await EmpresasAPI.update(id, {...e, status: newStatus});
+    e.status = newStatus;
+    renderCards();
+    showToast(`${e.fantasia||e.razao} ${newStatus==='Ativa'?'ativada':'desativada'}.`);
+  } catch(err) { showToast('Erro: '+err.message); }
+}
+
+async function removeEmpresa(id) {
+  const e = empresas.find(x=>x.id===id);
+  if (!confirm(`Remover "${e?.razao}"?`)) return;
+  try {
+    await EmpresasAPI.delete(id);
+    empresas = empresas.filter(x=>x.id!==id);
+    renderCards(); showToast('Empresa removida.');
+  } catch(err) { showToast('Erro: '+err.message); }
+}
+
+// ── MODAL ──
+function openModal(editId=null) {
+  editingId = editId;
+  const e = editId ? empresas.find(x=>x.id===editId) : null;
+  document.getElementById('modal-title').textContent = e ? 'Editar Empresa' : 'Nova Empresa';
+  document.getElementById('f-razao').value    = e?.razao||'';
+  document.getElementById('f-fantasia').value = e?.fantasia||'';
+  document.getElementById('f-cnpj').value     = e?.cnpj||'';
+  document.getElementById('f-segmento').value = e?.segmento||'';
+  document.getElementById('f-regime').value   = e?.regime||'';
+  document.getElementById('f-porte').value    = e?.porte||'';
+  document.getElementById('f-status').value   = e?.status||'Ativa';
+  document.getElementById('f-cidade').value   = e?.cidade||'';
+  document.getElementById('f-estado').value   = e?.estado||'';
+  document.getElementById('f-periodo-inicio').value = e?.periodo_inicio||'';
+  document.getElementById('f-periodo-fim').value    = e?.periodo_fim||'';
+  selectedColor = e?.cor || COLORS[0];
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('selected', s.dataset.color===selectedColor);
+  });
+  document.getElementById('modal-empresa').classList.add('open');
+}
+
+function editEmpresa(id) { openModal(id); }
+function closeModal() { document.getElementById('modal-empresa').classList.remove('open'); editingId=null; }
+
+function selectColor(c) {
+  selectedColor = c;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color===c));
+}
+
+async function saveEmpresa() {
+  const razao = document.getElementById('f-razao').value.trim();
+  if (!razao) { alert('Preencha a Razão Social.'); return; }
+  const data = {
+    razao, cnpj: document.getElementById('f-cnpj').value.trim(),
+    fantasia: document.getElementById('f-fantasia').value.trim(),
+    segmento: document.getElementById('f-segmento').value,
+    regime:   document.getElementById('f-regime').value,
+    porte:    document.getElementById('f-porte').value,
+    status:   document.getElementById('f-status').value,
+    cidade:   document.getElementById('f-cidade').value.trim(),
+    estado:   document.getElementById('f-estado').value,
+    cor:      selectedColor,
+    periodo_inicio: document.getElementById('f-periodo-inicio').value || null,
+    periodo_fim:    document.getElementById('f-periodo-fim').value    || null,
+  };
+  try {
+    if (editingId) {
+      await EmpresasAPI.update(editingId, data);
+      const idx = empresas.findIndex(x=>x.id===editingId);
+      if (idx>=0) empresas[idx] = {...empresas[idx], ...data};
+      showToast('Empresa atualizada ✓');
+    } else {
+      const res = await EmpresasAPI.create(data);
+      empresas.push(res.empresa);
+      showToast('Empresa cadastrada ✓');
+    }
+    renderCards(); closeModal(); populateSegmentoFilter();
+  } catch(err) { showToast('Erro: '+err.message); }
+}
+
+function maskCNPJ(inp) {
+  let v=inp.value.replace(/\D/g,'');
+  v=v.replace(/^(\d{2})(\d)/,'$1.$2');
+  v=v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+  v=v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+  v=v.replace(/(\d{4})(\d)/,'$1-$2');
+  inp.value=v;
+}
+
+function showToast(msg) {
+  const t=document.createElement('div'); t.className='toast-msg'; t.textContent=msg;
+  document.getElementById('toast').appendChild(t);
+  setTimeout(()=>t.remove(),2600);
+}
+
+// ── INIT ──
+async function init() {
+  try {
+    const res = await EmpresasAPI.list();
+    empresas = res.empresas || [];
+    populateSegmentoFilter();
+    renderCards();
+  } catch(err) {
+    showToast('Erro ao carregar empresas: '+err.message);
+  }
+}
+init();
+</script>
+</body>
+</html>
